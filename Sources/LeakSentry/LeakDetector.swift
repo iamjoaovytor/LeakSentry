@@ -1,18 +1,22 @@
 import Foundation
 
 @MainActor
-final class LeakDetector {
-    static let shared = LeakDetector()
+package final class LeakDetector {
+    package static let shared = LeakDetector()
 
     private var configuration: Configuration = .default
 
     private init() {}
 
-    func configure(with configuration: Configuration) {
+    package func configure(with configuration: Configuration) {
         self.configuration = configuration
     }
 
-    func track(_ object: AnyObject, description: String) {
+    package func addIgnoredClasses(_ classes: Set<String>) {
+        configuration.ignoredClassNames.formUnion(classes)
+    }
+
+    package func track(_ object: AnyObject, description: String) {
         guard configuration.isEnabled else { return }
 
         let typeName = String(describing: type(of: object))
