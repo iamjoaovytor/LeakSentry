@@ -16,6 +16,10 @@ package final class LeakDetector {
         configuration.ignoredClassNames.formUnion(classes)
     }
 
+    package func reset() {
+        configuration = .default
+    }
+
     package func track(_ object: AnyObject, description: String) {
         guard configuration.isEnabled else { return }
 
