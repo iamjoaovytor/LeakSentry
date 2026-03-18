@@ -32,35 +32,36 @@ package final class LeakDetector {
         let objectId = ObjectIdentifier(object)
         guard pendingChecks.insert(objectId).inserted else { return }
 
-        let address = String(format: "%p", unsafeBitCast(object, to: Int.self))
-        let retainCount = CFGetRetainCount(object)
-
-        let report = LeakReport(
-            objectType: typeName,
-            objectDescription: description,
-            memoryAddress: address,
-            retainCount: retainCount,
-            context: context
-        )
+        let address = String(format: "%p", Int(bitPattern: Unmanaged.passUnretained(object).toOpaque()))
 
         let delay = configuration.detectionDelay
         let reporters = configuration.reporters
-        let maxPolls = 60
+        let maxPolls = 10
         weak let ref = object
 
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
 
-            guard ref != nil else {
-                pendingChecks.remove(objectId)
-                return
+            let report: LeakReport
+            do {
+                guard let leaked = ref else {
+                    pendingChecks.remove(objectId)
+                    return
+                }
+                report = LeakReport(
+                    objectType: typeName,
+                    objectDescription: description,
+                    memoryAddress: address,
+                    retainCount: CFGetRetainCount(leaked),
+                    context: context
+                )
             }
 
             reporters.forEach { $0.report(report) }
 
             var polls = 0
             while ref != nil, polls < maxPolls {
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 polls += 1
             }
 

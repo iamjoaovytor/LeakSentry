@@ -14,7 +14,7 @@ extension UIViewController {
     @objc private func leaksentry_viewDidDisappear(_ animated: Bool) {
         leaksentry_viewDidDisappear(animated)
 
-        guard isMovingFromParent || isBeingDismissed else { return }
+        guard isMovingFromParent || isBeingDismissed || isParentBeingDismissedOrRemoved else { return }
 
         let typeName = String(describing: type(of: self))
         guard !typeName.hasPrefix("_") else { return }
@@ -37,6 +37,16 @@ extension UIViewController {
             guard let self else { return }
             LeakDetector.shared.track(self, description: typeName, context: context)
         }
+    }
+    private var isParentBeingDismissedOrRemoved: Bool {
+        var current = parent
+        while let p = current {
+            if p.isBeingDismissed || p.isMovingFromParent {
+                return true
+            }
+            current = p.parent
+        }
+        return false
     }
 }
 #endif

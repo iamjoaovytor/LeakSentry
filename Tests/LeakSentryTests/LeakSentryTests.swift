@@ -123,9 +123,9 @@ struct LeakDetectorTests {
         try await Task.sleep(nanoseconds: 300_000_000)
         #expect(spy.reports.count == 1)
 
-        // Release → resolution should fire
+        // Release → resolution should fire (polling interval is 1s)
         retained = nil
-        try await Task.sleep(nanoseconds: 700_000_000)
+        try await Task.sleep(nanoseconds: 1_200_000_000)
         #expect(spy.resolutions.count == 1)
         #expect(spy.resolutions.first?.isResolved == true)
     }
