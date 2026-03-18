@@ -1,20 +1,22 @@
-# LeakSentry — Implementation Prompt
+# LeakSentry — AI Setup Guide
 
-> Copy the text block below and paste it into your AI assistant.
+> **Already added LeakSentry to your project?** Copy the prompt below and paste it into your AI assistant (Claude, ChatGPT, Cursor, etc.) to get help configuring it in your codebase.
+>
+> **Haven't added it yet?** First add the package manually in Xcode: File → Add Package Dependencies → paste `https://github.com/iamjoaovytor/LeakSentry` → select the modules you need. Then come back here.
 
 ```
-I want to integrate LeakSentry into my iOS project. LeakSentry is a Swift Package that automatically detects memory leaks at runtime for UIViewControllers, UIViews, and SwiftUI ViewModels. Repository: https://github.com/iamjoaovytor/LeakSentry
+I already added LeakSentry as a dependency in my iOS project. LeakSentry is a Swift Package that detects memory leaks at runtime for UIViewControllers, UIViews, and SwiftUI ViewModels. Repository: https://github.com/iamjoaovytor/LeakSentry
 
-Here is everything you need to know about the package:
+Here is everything you need to know to help me configure it:
 
-WHAT IT DOES: LeakSentry monitors objects (view controllers, views, view models) after they should have been deallocated. If an object is still alive after a configurable delay, it reports a memory leak with details like type name, memory address, retain count, and context (parent VC, nav stack, trigger). It also tracks resolution — if the leaked object eventually deallocates, it notifies that the leak was resolved.
+WHAT IT DOES: LeakSentry monitors objects (view controllers, views, view models) after they should have been deallocated. If an object is still alive after a configurable delay, it reports a memory leak with type name, memory address, and context. It also tracks resolution — if the leaked object eventually deallocates, it notifies that the leak was resolved.
 
 PACKAGE STRUCTURE — three modules, import only what you need:
 - "LeakSentry" — Core detection engine, reporters, configuration
 - "LeakSentryUIKit" — Auto-detection for UIViewController and UIView via method swizzling
 - "LeakSentrySwiftUI" — Manual tracking for SwiftUI ViewModels via .trackLeaks(for:) modifier
 
-INSTALLATION: Add via Swift Package Manager: Xcode → File → Add Package Dependencies → URL: https://github.com/iamjoaovytor/LeakSentry → Select the modules you need (LeakSentryUIKit for UIKit, LeakSentrySwiftUI for SwiftUI, or both). Requirements: iOS 15+, tvOS 15+, macOS 12+, visionOS 1+, Swift 5.9+.
+Requirements: iOS 15+, tvOS 15+, macOS 12+, visionOS 1+, Swift 5.9+.
 
 SETUP FOR UIKIT: Call once at app launch. All UIViewController and UIView subclasses are automatically monitored via swizzling:
 
@@ -67,7 +69,7 @@ You can combine multiple reporters. You can also create custom ones by conformin
 
 struct CrashlyticsReporter: LeakReporter {
     func report(_ leak: LeakReport) {
-        // leak.objectType, leak.memoryAddress, leak.retainCount, leak.context
+        // leak.objectType, leak.memoryAddress, leak.context
     }
     func resolved(_ leak: LeakReport) { }
 }
@@ -80,15 +82,14 @@ CONFIGURATION OPTIONS:
 
 HOW DETECTION WORKS — UIKit is automatic: method swizzling on viewDidDisappear(_:) and removeFromSuperview(). It checks isMovingFromParent, isBeingDismissed, or if a parent is being dismissed. System/framework classes are filtered out automatically. After the delay, if the object is still alive, a leak is reported.
 
-HOW DETECTION WORKS — SwiftUI is manual via the .trackLeaks(for:) modifier. It uses onDisappear with a 300ms grace period to prevent false positives from NavigationStack (where onDisappear fires on push but the view is still in the stack). If the view doesn't reappear within 300ms, the ViewModel is tracked. After the configurable delay (default 1.5s), if still alive, a leak is reported.
+HOW DETECTION WORKS — SwiftUI is manual via the .trackLeaks(for:) modifier. It uses onDisappear with a 300ms grace period to prevent false positives from NavigationStack (where onDisappear fires on push but the view is still in the stack). If the view doesn't reappear within 300ms, the ViewModel is tracked. After the configurable delay (default 1.5s), if still alive, a leak is reported. For @Observable ViewModels, it uses Mirror reflection to detect stored closures that could cause retain cycles — skipping objects retained only by SwiftUI's observation infrastructure.
 
-WHAT TO DO NOW — Based on my project, please:
+WHAT TO DO NOW — The package is already in my project. Please:
 1. Identify my project type (UIKit, SwiftUI, or hybrid) by looking at my code.
-2. Add the SPM dependency to my project.
-3. Configure LeakSentry at app launch with appropriate reporters.
-4. Add leak tracking to my ViewModels (SwiftUI) — adopt LeakSentinel and add .trackLeaks(for:) to Views.
-5. Test it works by creating a deliberate leak (e.g. strong self capture in a closure stored as a property) and verifying the report appears in the console.
-6. Ignore known false positives by adding class names to ignoredClassNames if needed.
+2. Configure LeakSentry at app launch with appropriate reporters.
+3. For SwiftUI ViewModels — adopt LeakSentinel protocol and add .trackLeaks(for:) to the Views that own them.
+4. Test by creating a deliberate leak (e.g. strong self capture in a closure stored as a property) and verifying the report appears.
+5. Ignore known false positives by adding class names to ignoredClassNames if needed.
 
 Start by searching my project for the entry point (AppDelegate, SceneDelegate, or @main App struct) and existing ViewModels.
 ```
