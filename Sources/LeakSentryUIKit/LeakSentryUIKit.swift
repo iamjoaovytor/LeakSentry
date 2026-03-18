@@ -1,4 +1,5 @@
 #if canImport(UIKit)
+import UIKit
 import LeakSentry
 
 extension LeakSentry {

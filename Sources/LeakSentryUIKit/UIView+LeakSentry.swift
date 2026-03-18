@@ -6,19 +6,23 @@ extension UIView {
     static func leaksentry_swizzleView() {
         swizzleInstanceMethod(
             UIView.self,
-            original: #selector(didMoveToWindow),
-            swizzled: #selector(leaksentry_didMoveToWindow)
+            original: #selector(removeFromSuperview),
+            swizzled: #selector(leaksentry_removeFromSuperview)
         )
     }
 
-    @objc private func leaksentry_didMoveToWindow() {
-        leaksentry_didMoveToWindow()
+    @objc private func leaksentry_removeFromSuperview() {
+        let hadSuperview = superview != nil
+        leaksentry_removeFromSuperview() // calls original
 
-        guard window == nil, superview == nil else { return }
+        // Only track views explicitly removed from a parent,
+        // not internal layout passes
+        guard hadSuperview, window == nil else { return }
 
         let typeName = String(describing: type(of: self))
         guard !defaultIgnoredViewClasses.contains(typeName),
-              !typeName.hasPrefix("_") else { return }
+              !typeName.hasPrefix("_"),
+              !typeName.hasPrefix("UI") else { return }
 
         Task { @MainActor in
             LeakDetector.shared.track(self, description: typeName)

@@ -138,12 +138,15 @@ struct LeakDetectorTests {
 
         let before = Date()
         var retained: FakeObject? = FakeObject()
-        LeakDetector.shared.track(retained!, description: "test-description")
+        LeakDetector.shared.track(retained!, description: "test-description", context: ["Source": "test"])
 
         try await Task.sleep(nanoseconds: 300_000_000)
         let report = try #require(spy.reports.first)
         #expect(report.objectType == "FakeObject")
         #expect(report.objectDescription == "test-description")
+        #expect(report.memoryAddress.hasPrefix("0x"))
+        #expect(report.retainCount > 0)
+        #expect(report.context["Source"] == "test")
         #expect(report.detectedAt >= before)
         #expect(report.isResolved == false)
 

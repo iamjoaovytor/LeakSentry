@@ -17,11 +17,25 @@ extension UIViewController {
         guard isMovingFromParent || isBeingDismissed else { return }
 
         let typeName = String(describing: type(of: self))
-        guard !defaultIgnoredViewControllerClasses.contains(typeName),
-              !typeName.hasPrefix("_") else { return }
+        guard !typeName.hasPrefix("_") else { return }
 
-        Task { @MainActor in
-            LeakDetector.shared.track(self, description: typeName)
+        var context: [String: String] = [:]
+        if let parent = parent {
+            context["Parent"] = String(describing: type(of: parent))
+        }
+        if let nav = navigationController {
+            let stack = nav.viewControllers.map { String(describing: type(of: $0)) }
+            context["Nav stack"] = stack.joined(separator: " → ")
+        }
+        if isBeingDismissed {
+            context["Trigger"] = "dismissed"
+        } else if isMovingFromParent {
+            context["Trigger"] = "removed from parent"
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            LeakDetector.shared.track(self, description: typeName, context: context)
         }
     }
 }
