@@ -8,10 +8,10 @@ public enum LeakSentry {
 }
 
 public struct Configuration: Sendable {
-    public var detectionDelay: TimeInterval
-    public var reporters: [any LeakReporter]
-    public var isEnabled: Bool
-    public var ignoredClassNames: Set<String>
+    public let detectionDelay: TimeInterval
+    public let reporters: [any LeakReporter]
+    public let isEnabled: Bool
+    public let ignoredClassNames: Set<String>
 
     public static let `default` = Configuration()
 
@@ -25,5 +25,14 @@ public struct Configuration: Sendable {
         self.reporters = reporters
         self.isEnabled = isEnabled
         self.ignoredClassNames = ignoredClassNames
+    }
+
+    public func adding(ignoredClassNames classes: Set<String>) -> Configuration {
+        Configuration(
+            detectionDelay: detectionDelay,
+            reporters: reporters,
+            isEnabled: isEnabled,
+            ignoredClassNames: ignoredClassNames.union(classes)
+        )
     }
 }

@@ -6,7 +6,7 @@ public struct OSLogReporter: LeakReporter {
     public init() {}
 
     public func report(_ leak: LeakReport) {
-        Self.logger.warning("⚠️ Leak: \(leak.objectType) at \(leak.memoryAddress) (rc: \(leak.retainCount))")
+        Self.logger.warning("⚠️ Leak: \(leak.objectType) at \(leak.memoryAddress)")
     }
 
     public func resolved(_ leak: LeakReport) {

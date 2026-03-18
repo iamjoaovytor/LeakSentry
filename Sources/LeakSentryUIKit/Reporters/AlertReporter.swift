@@ -14,7 +14,7 @@ public struct AlertReporter: LeakReporter {
 
             var details = """
             \(leak.objectType)
-            \(leak.memoryAddress)  rc: \(leak.retainCount)
+            \(leak.memoryAddress)
             """
 
             for (key, value) in leak.context.sorted(by: { $0.key < $1.key }) {

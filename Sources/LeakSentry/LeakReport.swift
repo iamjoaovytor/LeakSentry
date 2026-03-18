@@ -5,7 +5,6 @@ public struct LeakReport: Sendable {
     public let objectType: String
     public let objectDescription: String
     public let memoryAddress: String
-    public let retainCount: Int
     public let context: [String: String]
     public let detectedAt: Date
     public let isResolved: Bool
@@ -15,7 +14,6 @@ public struct LeakReport: Sendable {
         objectType: String,
         objectDescription: String,
         memoryAddress: String,
-        retainCount: Int,
         context: [String: String] = [:],
         detectedAt: Date = Date(),
         isResolved: Bool = false
@@ -24,7 +22,6 @@ public struct LeakReport: Sendable {
         self.objectType = objectType
         self.objectDescription = objectDescription
         self.memoryAddress = memoryAddress
-        self.retainCount = retainCount
         self.context = context
         self.detectedAt = detectedAt
         self.isResolved = isResolved
@@ -36,7 +33,6 @@ public struct LeakReport: Sendable {
             objectType: objectType,
             objectDescription: objectDescription,
             memoryAddress: memoryAddress,
-            retainCount: retainCount,
             context: context,
             detectedAt: detectedAt,
             isResolved: true

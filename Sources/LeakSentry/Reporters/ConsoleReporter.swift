@@ -6,7 +6,6 @@ public struct ConsoleReporter: LeakReporter {
         var rows = [
             ("Type", leak.objectType),
             ("Address", leak.memoryAddress),
-            ("RC", "\(leak.retainCount)"),
             ("Detected", "\(leak.detectedAt)"),
         ]
         for (key, value) in leak.context.sorted(by: { $0.key < $1.key }) {

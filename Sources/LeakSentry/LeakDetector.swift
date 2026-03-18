@@ -1,4 +1,20 @@
 import Foundation
+import ObjectiveC
+
+/// Attached to tracked objects via `objc_setAssociatedObject`.
+/// When the object is deallocated, the canceller's `deinit` fires and
+/// cancels the monitoring task — preventing false-positive reports
+/// for objects that SwiftUI's `@State` releases late.
+private final class DeallocCanceller: NSObject, @unchecked Sendable {
+    let task: Task<Void, Never>
+    init(task: Task<Void, Never>) {
+        self.task = task
+        super.init()
+    }
+    deinit { task.cancel() }
+}
+
+private nonisolated(unsafe) var leakCheckKey: UInt8 = 0
 
 @MainActor
 package final class LeakDetector {
@@ -15,7 +31,7 @@ package final class LeakDetector {
     }
 
     package func addIgnoredClasses(_ classes: Set<String>) {
-        configuration.ignoredClassNames.formUnion(classes)
+        configuration = configuration.adding(ignoredClassNames: classes)
     }
 
     package func reset() {
@@ -36,39 +52,40 @@ package final class LeakDetector {
 
         let delay = configuration.detectionDelay
         let reporters = configuration.reporters
-        let maxPolls = 10
+        let maxPolls = 30
         weak let ref = object
 
-        Task { @MainActor in
+        let task = Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
 
-            let report: LeakReport
-            do {
-                guard let leaked = ref else {
-                    pendingChecks.remove(objectId)
-                    return
-                }
-                report = LeakReport(
-                    objectType: typeName,
-                    objectDescription: description,
-                    memoryAddress: address,
-                    retainCount: CFGetRetainCount(leaked),
-                    context: context
-                )
+            guard !Task.isCancelled, ref != nil else {
+                pendingChecks.remove(objectId)
+                return
             }
+
+            let report = LeakReport(
+                objectType: typeName,
+                objectDescription: description,
+                memoryAddress: address,
+                context: context
+            )
 
             reporters.forEach { $0.report(report) }
 
             var polls = 0
-            while ref != nil, polls < maxPolls {
+            while ref != nil, !Task.isCancelled, polls < maxPolls {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 polls += 1
             }
 
-            if ref == nil {
+            if ref == nil || Task.isCancelled {
                 reporters.forEach { $0.resolved(report.resolving()) }
             }
             pendingChecks.remove(objectId)
         }
+
+        // When the object is deallocated (no retain cycle), the canceller's
+        // deinit immediately cancels the monitoring task.
+        objc_setAssociatedObject(object, &leakCheckKey, DeallocCanceller(task: task), .OBJC_ASSOCIATION_RETAIN)
     }
 }

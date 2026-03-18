@@ -145,7 +145,6 @@ struct LeakDetectorTests {
         #expect(report.objectType == "FakeObject")
         #expect(report.objectDescription == "test-description")
         #expect(report.memoryAddress.hasPrefix("0x"))
-        #expect(report.retainCount > 0)
         #expect(report.context["Source"] == "test")
         #expect(report.detectedAt >= before)
         #expect(report.isResolved == false)
