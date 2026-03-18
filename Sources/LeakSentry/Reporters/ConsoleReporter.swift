@@ -3,19 +3,28 @@ public struct ConsoleReporter: LeakReporter {
 
     public func report(_ leak: LeakReport) {
         #if DEBUG
-        var lines = [
-            "┌─────────────────────────────────────────",
-            "│ ⚠️  LeakSentry — Leak Detected",
-            "├─────────────────────────────────────────",
-            "│ Type:        \(leak.objectType)",
-            "│ Address:     \(leak.memoryAddress)",
-            "│ Retain count: \(leak.retainCount)",
-            "│ Detected at: \(leak.detectedAt)",
+        var rows = [
+            ("Type", leak.objectType),
+            ("Address", leak.memoryAddress),
+            ("RC", "\(leak.retainCount)"),
+            ("Detected", "\(leak.detectedAt)"),
         ]
         for (key, value) in leak.context.sorted(by: { $0.key < $1.key }) {
-            lines.append("│ \(key): \(value)")
+            rows.append((key, value))
         }
-        lines.append("└─────────────────────────────────────────")
+
+        let maxKey = rows.map(\.0.count).max() ?? 0
+
+        var lines = [
+            "┌──────────────────────────────────────────────",
+            "│  LeakSentry — Leak Detected",
+            "├──────────────────────────────────────────────",
+        ]
+        for (key, value) in rows {
+            let padded = key.padding(toLength: maxKey, withPad: " ", startingAt: 0)
+            lines.append("│  \(padded)  \(value)")
+        }
+        lines.append("└──────────────────────────────────────────────")
         print(lines.joined(separator: "\n"))
         #endif
     }
