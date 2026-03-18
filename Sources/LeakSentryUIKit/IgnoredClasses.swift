@@ -23,5 +23,14 @@ let defaultIgnoredViewClasses: Set<String> = [
     "UILayoutContainerView",
     "UINavigationTransitionView",
     "UIViewControllerWrapperView",
+    // SwiftUI internal views
+    "NavigationBarContentView",
+    "NavigationBarLargeTitleView",
+    "NavigationBarTitleControl",
+    "HostingView",
+    "HostingScrollView",
+    "PlatformGroupContainer",
+    "PlatformViewHost",
+    "SwiftUIBackdropView",
 ]
 #endif

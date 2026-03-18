@@ -15,18 +15,24 @@ extension UIView {
         let hadSuperview = superview != nil
         leaksentry_removeFromSuperview() // calls original
 
-        // Only track views explicitly removed from a parent,
-        // not internal layout passes
         guard hadSuperview, window == nil else { return }
 
         let typeName = String(describing: type(of: self))
         guard !defaultIgnoredViewClasses.contains(typeName),
               !typeName.hasPrefix("_"),
-              !typeName.hasPrefix("UI") else { return }
+              !typeName.hasPrefix("UI"),
+              !Self.isSystemFrameworkView(self) else { return }
 
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             LeakDetector.shared.track(self, description: typeName)
         }
+    }
+
+    private static func isSystemFrameworkView(_ view: UIView) -> Bool {
+        let bundle = Bundle(for: type(of: view))
+        // Only track views from the app bundle, not system/framework views
+        return bundle != Bundle.main
     }
 }
 #endif

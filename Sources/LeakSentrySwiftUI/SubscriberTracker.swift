@@ -15,34 +15,36 @@ extension View {
     /// MyView()
     ///     .trackLeaks(for: viewModel)
     /// ```
-    public func trackLeaks<VM: LeakSentinel>(for viewModel: VM) -> some View {
-        self.modifier(LeakSentinelModifier(viewModel: viewModel))
+    public func trackLeaks<VM: LeakSentinel>(
+        for viewModel: VM,
+        file: String = #fileID,
+        line: Int = #line
+    ) -> some View {
+        self.modifier(LeakSentinelModifier(viewModel: viewModel, callSite: "\(file):\(line)"))
     }
 }
 
 private struct LeakSentinelModifier<VM: LeakSentinel>: ViewModifier {
     let viewModel: VM
+    let callSite: String
     @State private var disappearTask: Task<Void, Never>?
 
     func body(content: Content) -> some View {
         content
             .onAppear {
-                // View reappeared (e.g. popped back) — cancel pending check
                 disappearTask?.cancel()
                 disappearTask = nil
             }
             .onDisappear {
                 let vm = viewModel
-                // Wait a grace period to see if onAppear fires again.
-                // If not, the view was truly removed from the hierarchy.
+                let site = callSite
                 disappearTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s grace
+                    try? await Task.sleep(nanoseconds: 300_000_000)
                     guard !Task.isCancelled else { return }
 
                     let typeName = String(describing: type(of: vm))
                     let context = [
-                        "Source": "SwiftUI .trackLeaks(for:)",
-                        "ViewModel": typeName,
+                        "Location": site,
                     ]
                     LeakDetector.shared.track(vm, description: typeName, context: context)
                 }
