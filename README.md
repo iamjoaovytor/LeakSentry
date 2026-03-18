@@ -2,6 +2,10 @@
 
 Automatic memory leak detection for UIViewControllers, UIViews, and SwiftUI ViewModels.
 
+<p align="center">
+  <img src="demo.gif" alt="LeakSentry demo" width="620">
+</p>
+
 ---
 
 ## Installation
@@ -40,12 +44,16 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions...)
 
 ### SwiftUI
 
-1. Adopt `LeakSentinel` on any `ObservableObject` ViewModel:
+1. Adopt `LeakSentinel` on any ViewModel (`ObservableObject` or `@Observable`):
 
 ```swift
 import LeakSentrySwiftUI
 
 class ProfileViewModel: ObservableObject, LeakSentinel { ... }
+
+// or with @Observable (iOS 17+)
+@Observable
+class ProfileViewModel: LeakSentinel { ... }
 ```
 
 2. Add `.trackLeaks(for:)` to the View that owns it:
