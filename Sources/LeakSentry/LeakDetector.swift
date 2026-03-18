@@ -1,6 +1,10 @@
 import Foundation
 import ObjectiveC
 
+private extension TimeInterval {
+    var nanoseconds: UInt64 { UInt64(self * 1_000_000_000) }
+}
+
 /// Attached to tracked objects via `objc_setAssociatedObject`.
 /// When the object is deallocated, the canceller's `deinit` fires and
 /// cancels the monitoring task — preventing false-positive reports
@@ -14,6 +18,8 @@ private final class DeallocCanceller: NSObject, @unchecked Sendable {
     deinit { task.cancel() }
 }
 
+/// Key for `objc_setAssociatedObject`. Only the address (`&leakCheckKey`) is used,
+/// never the value — so `nonisolated(unsafe)` is safe here.
 private nonisolated(unsafe) var leakCheckKey: UInt8 = 0
 
 @MainActor
@@ -56,7 +62,7 @@ package final class LeakDetector {
         weak let ref = object
 
         let task = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: delay.nanoseconds)
 
             guard !Task.isCancelled, ref != nil else {
                 pendingChecks.remove(objectId)
@@ -74,7 +80,7 @@ package final class LeakDetector {
 
             var polls = 0
             while ref != nil, !Task.isCancelled, polls < maxPolls {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(nanoseconds: TimeInterval(1).nanoseconds)
                 polls += 1
             }
 

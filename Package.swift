@@ -30,5 +30,9 @@ let package = Package(
             name: "LeakSentryTests",
             dependencies: ["LeakSentry"]
         ),
+        .testTarget(
+            name: "LeakSentrySwiftUITests",
+            dependencies: ["LeakSentrySwiftUI"]
+        ),
     ]
 )

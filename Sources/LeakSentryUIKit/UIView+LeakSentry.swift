@@ -30,9 +30,13 @@ extension UIView {
     }
 
     private static func isSystemFrameworkView(_ view: UIView) -> Bool {
-        let bundle = Bundle(for: type(of: view))
-        // Only track views from the app bundle, not system/framework views
-        return bundle != Bundle.main
+        let viewBundle = Bundle(for: type(of: view))
+        guard viewBundle != Bundle.main else { return false }
+        // Statically linked SPM packages resolve to Bundle.main (handled above).
+        // For dynamic frameworks, exclude Apple system paths but include
+        // third-party frameworks embedded inside the app bundle.
+        let path = viewBundle.bundlePath
+        return path.hasPrefix("/System/") || path.hasPrefix("/usr/")
     }
 }
 #endif

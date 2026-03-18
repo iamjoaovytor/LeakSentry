@@ -35,7 +35,11 @@ private final class WeakRef<T: AnyObject>: @unchecked Sendable {
 /// Checks if an @Observable object has stored closure/function properties
 /// that could cause retain cycles (e.g., `var onComplete: (() -> Void)?`).
 /// Skips `_$observationRegistrar` and other observation infrastructure fields.
-private func hasRetainCycleRisk(_ object: AnyObject) -> Bool {
+///
+/// Note: Uses `String(describing:)` to detect function types by the presence of `"->"`.
+/// This is a runtime heuristic, not a stable API — but the format has been consistent
+/// across all Swift versions to date and no real type name would contain `"->"`.
+package func hasRetainCycleRisk(_ object: AnyObject) -> Bool {
     let mirror = Mirror(reflecting: object)
     for child in mirror.children {
         if let label = child.label, label.hasPrefix("_$") { continue }
